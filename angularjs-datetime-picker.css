@@ -72,3 +72,11 @@
 .angularjs-datetime-picker input[type=range] {
   width: 150px;
 }
+
+.angularjs-datetime-picker> .rel-selector > table, td {
+  text-align: center;
+  padding : 3px;
+  border-collapse: collapse;
+  border: 1px solid grey;
+  cursor: pointer;
+}

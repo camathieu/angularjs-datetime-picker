@@ -126,11 +126,32 @@
     '    </div>',
     '    <div class="adp-day" ng-show="mv.trailingDays.length < 7" ng-repeat="day in mv.trailingDays">{{::day}}</div>',
     '  </div>',
-    '  <div class="adp-days" id="adp-time"> ',
-    '    <label class="timeLabel">Time:</label> <span class="timeValue">{{("0"+inputHour).slice(-2)}} : {{("0"+inputMinute).slice(-2)}}</span><br/>',
-    '    <label class="hourLabel">Hour:</label> <input class="hourInput" type="range" min="0" max="23" ng-model="inputHour" ng-change="updateNgModel()" />',
-    '    <label class="minutesLabel">Min:</label> <input class="minutesInput" type="range" min="0" max="59" ng-model="inputMinute"  ng-change="updateNgModel()"/> ',
-    '  </div> ',
+    '  <div class="adp-days" id="adp-time">',
+    '    <label class="timeLabel">Time:</label><span class="timeValue">{{("0"+inputHour).slice(-2)}} : {{("0"+inputMinute).slice(-2)}}</span><br/>',
+    '    <label class="hourLabel">Hour:</label><input class="hourInput" type="range" min="0" max="23" ng-model="inputHour" ng-change="updateNgModel()" />',
+    '    <label class="minutesLabel">Min:</label><input class="minutesInput" type="range" min="0" max="59" ng-model="inputMinute"  ng-change="updateNgModel()"/>',
+    '  </div>',
+    '  <div class="rel-selector">',
+    '    <table>',
+    '      <tr>',
+    '        <td ng-click="move(-3600)">1h</td>',
+    '        <td ng-click="move(-1800)">30m</td>',
+    '        <td ng-click="move(-300)">5m</td>',
+    '        <td ng-click="now()">now</td>',
+    '        <td ng-click="move(300)">5m</td>',
+    '        <td ng-click="move(1800)">30m</td>',
+    '        <td ng-click="move(3600)">1h</td>',
+    '      <tr/>',
+    '      <tr>',
+    '        <td ng-click="move(-30*86400)">30d</td>',
+    '        <td ng-click="move(-7*86400)">1w</td>',
+    '        <td ng-click="move(-86400)">1d</td>',
+    '        <td>-/+</td>',
+    '        <td ng-click="move(86400)">1d</td>',
+    '        <td ng-click="move(7*86400)">1w</td>',
+    '        <td ng-click="move(30*86400)">30d</td>',
+    '      <tr/>',
+    '  </div>',
     '</div>'].join("\n");
 
   var datetimePickerPopup = function($locale, dateFilter){
@@ -208,12 +229,12 @@
             if (!dateStr.match(/[0-9]{2}:/)) {  // if no time is given, add 00:00:00 at the end
               dateStr += " 00:00:00";
             }
-            dateStr = dateStr.replace(/([0-9]{2}-[0-9]{2})-([0-9]{4})/,'$2-$1');      //mm-dd-yyyy to yyyy-mm-dd
-            dateStr = dateStr.replace(/([\/-][0-9]{2,4})\ ([0-9]{2}\:[0-9]{2}\:)/,'$1T$2'); //reformat for FF
-            dateStr = dateStr.replace(/EDT|EST|CDT|CST|MDT|PDT|PST|UT|GMT/g,''); //remove timezone
-            dateStr = dateStr.replace(/\s*\(\)\s*/,'');                          //remove timezone
-            dateStr = dateStr.replace(/[\-\+][0-9]{2}:?[0-9]{2}$/,'');           //remove timezone
-            dateStr += getTimezoneOffset(dateStr);
+            //dateStr = dateStr.replace(/([0-9]{2}-[0-9]{2})-([0-9]{4})/,'$2-$1');      //mm-dd-yyyy to yyyy-mm-dd
+            //dateStr = dateStr.replace(/([\/-][0-9]{2,4})\ ([0-9]{2}\:[0-9]{2}\:)/,'$1T$2'); //reformat for FF
+            //dateStr = dateStr.replace(/EDT|EST|CDT|CST|MDT|PDT|PST|UT|GMT/g,''); //remove timezone
+            //dateStr = dateStr.replace(/\s*\(\)\s*/,'');                          //remove timezone
+            //dateStr = dateStr.replace(/[\-\+][0-9]{2}:?[0-9]{2}$/,'');           //remove timezone
+            //dateStr += getTimezoneOffset(dateStr);
             var d = new Date(dateStr);
             scope.selectedDate = new Date(
               d.getFullYear(),
@@ -235,18 +256,21 @@
           var minute = scope.minute || today.getMinutes();
           scope.selectedDate = new Date(year, month, day, hour, minute, 0);
         }
-        scope.inputHour   = scope.selectedDate.getHours();
-        scope.inputMinute = scope.selectedDate.getMinutes();
 
-        // Default to current year and month
-        scope.mv = getMonthView(scope.selectedDate.getFullYear(), scope.selectedDate.getMonth());
-        scope.today = dateFilter(new Date(), 'yyyy-M-d');
-        if (scope.mv.year == scope.selectedDate.getFullYear() && scope.mv.month == scope.selectedDate.getMonth()) {
-          scope.selectedDay = scope.selectedDate.getDate();
-        } else {
-          scope.selectedDay = null;
-        }
+        scope.update();
       });
+
+      scope.now = function(){
+        scope.selectedDate = new Date();
+        scope.update();
+        scope.updateNgModel();
+      };
+
+      scope.move = function(seconds){
+        scope.selectedDate = new Date(scope.selectedDate.getTime() + seconds * 1000);
+        scope.update();
+        scope.updateNgModel();
+      };
 
       scope.addMonth = function (amount) {
         scope.mv = getMonthView(scope.mv.year, scope.mv.month + amount);
@@ -259,6 +283,20 @@
           if (scope.closeOnSelect !== false) {
             ctrl.closeDatetimePicker();
           }
+        }
+      };
+
+      scope.update = function(){
+        scope.inputHour   = scope.selectedDate.getHours();
+        scope.inputMinute = scope.selectedDate.getMinutes();
+
+        // Default to current year and month
+        scope.mv = getMonthView(scope.selectedDate.getFullYear(), scope.selectedDate.getMonth());
+        scope.today = dateFilter(new Date(), 'yyyy-M-d');
+        if (scope.mv.year == scope.selectedDate.getFullYear() && scope.mv.month == scope.selectedDate.getMonth()) {
+          scope.selectedDay = scope.selectedDate.getDate();
+        } else {
+          scope.selectedDay = null;
         }
       };
 
